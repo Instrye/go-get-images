@@ -4,11 +4,12 @@ import (
 	"flag"
 	"fmt"
 	. "github.com/bitly/go-simplejson"
-	// "github.com/garyburd/redigo/redis"
+	"github.com/garyburd/redigo/redis"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"regexp"
+	"time"
 )
 
 type Conf struct {
@@ -20,6 +21,7 @@ type Conf struct {
 
 var confFile = flag.String("f", "config.json", "load config file")
 var confJson Conf
+var redisconn redis.Conn
 
 func init() {
 	flag.Parse()
@@ -45,14 +47,16 @@ func init() {
 	confJson.redisPort = configJson.Get("redisPort").MustString()
 }
 func main() {
-	// redisconn, err := redis.Dial("tcp", "127.0.0.1:"+confJson.redisPort)
-	// if err != nil {
-	// 	fmt.Printf("redis :%s is not connection.\r\n%s\r\n", confJson.redisPort, err)
-	// 	os.Exit(1)
-	// }
+	var err error
+	redisconn, err = redis.Dial("tcp", "127.0.0.1:"+confJson.redisPort)
+	if err != nil {
+		fmt.Printf("redis :%s is not connection.\r\n%s\r\n", confJson.redisPort, err)
+		os.Exit(1)
+	}
 	urlchan := make(chan string, 100)
 	urlchan <- confJson.url
-	paserUrl(urlchan)
+	go paserUrl(urlchan)
+	time.Sleep(10e9)
 }
 
 func paserUrl(urlchan chan string) {
@@ -76,9 +80,22 @@ func paserHtml(url string, urlchan chan<- string) {
 	if err != nil {
 		fmt.Printf("url :%s is not get body.\r\n%s\r\n", url, err)
 	}
+	fmt.Printf("%s", body)
 	urlregex := regexp.MustCompile(confJson.urlRegex)
 	urlarray := urlregex.FindAllString(string(body), -1)
 	for _, v := range urlarray {
-		urlchan <- v
+		if isInRedis(url) == 0 {
+			urlchan <- v
+			addInRedis(url)
+		}
 	}
+}
+
+func isInRedis(url string) int {
+	i, _ := redis.Int(redisconn.Do("SISMEMBER", "url_is_set", url))
+	return i
+}
+
+func addInRedis(url string) {
+	redisconn.Do("SADD", "url_is_set", url)
 }
