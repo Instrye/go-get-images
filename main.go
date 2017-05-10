@@ -53,5 +53,5 @@ func main() {
 		fmt.Printf("url :%s is not get body.\r\n%s\r\n", confJson.url, err)
 		os.Exit(1)
 	}
-
+	fmt.Println(body)
 }
