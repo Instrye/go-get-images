@@ -7,12 +7,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	// "regexp"
+	"regexp"
 )
 
 type Conf struct {
 	url       string
-	regex     string
+	imgRegex  string
+	urlRegex  string
 	redisPort int
 }
 
@@ -38,7 +39,8 @@ func init() {
 		os.Exit(1)
 	}
 	confJson.url = configJson.Get("url").MustString()
-	confJson.regex = configJson.Get("regex").MustString()
+	confJson.urlRegex = configJson.Get("urlregex").MustString()
+	confJson.imgRegex = configJson.Get("imgregex").MustString()
 	confJson.redisPort = configJson.Get("redisPort").MustInt()
 }
 func main() {
@@ -53,5 +55,10 @@ func main() {
 		fmt.Printf("url :%s is not get body.\r\n%s\r\n", confJson.url, err)
 		os.Exit(1)
 	}
-	fmt.Println(body)
+	urlregex := regexp.MustCompile(confJson.urlRegex)
+	urlarray := urlregex.FindAllString(string(body), -1)
+	for _, v := range urlarray {
+		fmt.Println(v)
+	}
+	// imgregex := regexp.MustCompile(confJson.imgRegex)
 }

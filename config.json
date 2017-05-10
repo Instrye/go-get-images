@@ -1,1 +1,1 @@
-{"url":"http://meizitu.com","urlregex":"meizitu.com","imgregex":"meizutu.+\\.png","redisPort":6610}
+{"url":"http://meizitu.com","urlregex":"(https|http)://.*?meizitu.com.*?\"","imgregex":"meizutu.+\\.png","redisPort":6610}
