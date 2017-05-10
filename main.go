@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
-	"time"
+	// "time"
 )
 
 type Conf struct {
@@ -55,8 +55,7 @@ func main() {
 	}
 	urlchan := make(chan string, 100)
 	urlchan <- confJson.url
-	go paserUrl(urlchan)
-	time.Sleep(10e9)
+	paserUrl(urlchan)
 }
 
 func paserUrl(urlchan chan string) {
@@ -73,6 +72,7 @@ func paserHtml(url string, urlchan chan<- string) {
 	res, err := http.Get(url)
 	if err != nil {
 		fmt.Printf("url :%s is not connection.\r\n%s\r\n", url, err)
+		return
 	} else {
 		defer res.Body.Close()
 	}
@@ -84,9 +84,9 @@ func paserHtml(url string, urlchan chan<- string) {
 	urlregex := regexp.MustCompile(confJson.urlRegex)
 	urlarray := urlregex.FindAllString(string(body), -1)
 	for _, v := range urlarray {
-		if isInRedis(url) == 0 {
+		if isInRedis(v) == 0 {
 			urlchan <- v
-			addInRedis(url)
+			addInRedis(v)
 		}
 	}
 }
